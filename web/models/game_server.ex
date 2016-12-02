@@ -72,7 +72,6 @@ defmodule Pokerboy.Gameserver do
   end 
   
   def handle_call({:user_available, username}, _from, state) do
-    IO.inspect state, width: 20
     available = Map.values(state.users) 
       |> Enum.all?(fn(user) -> user.name != username end)
     {:reply, available, state}
@@ -98,11 +97,8 @@ defmodule Pokerboy.Gameserver do
     cond do
       !Map.has_key?(state.users, admin) || !state.users[admin].is_admin? ->
         {:reply, %{status: :error, message: "invalid admin"}, state}
-      !Map.has_key?(state.users, user_uuid) ->
-        {:reply, %{status: :error, message: "invalid user"}, state}
       true ->
-        state = put_in(state.users[user_uuid].is_admin?, true)
-        {:reply, %{status: :ok, message: state.users}, state}
+        handle_call({:become_admin, %{user: user_uuid, password: state.password}}, {}, state)
     end
   end    
 
