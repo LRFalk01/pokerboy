@@ -24,11 +24,11 @@ defmodule Pokerboy.GameChannel do
         {:ok,
           socket
           |> assign(:game_id, uuid)
+          |> assign(:name, name)
           |> assign(:user_id, Gameserver.user_join(uuid, name))
         }
     end
   end
-
 
   def handle_in("create", %{"name"=>name}, socket) do
     uuid = Ecto.UUID.generate()
@@ -41,13 +41,20 @@ defmodule Pokerboy.GameChannel do
   end
 
   def handle_in("become_admin", %{"password"=>password}, socket) do
-    resp = Pokerboy.Gameserver.become_admin(socket.assigns.game_id, socket.assigns.user_id, password)
+    resp = Pokerboy.Gameserver.become_admin(socket.assigns.game_id, socket.assigns.name, password)
 
     push socket, "user_authenticated", resp
     {:noreply, socket}
   end
 
-  def handle_in("user_promote", %{"user_uuid"=>user_uuid}, socket) do
+  def handle_in("user_promote", %{"user"=>name}, socket) do
+    resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, name)
+
+    push socket, "user_authenticated", resp
+    {:noreply, socket}
+  end
+
+  def handle_in("toggle_playing", %{"user_uuid"=>user_uuid}, socket) do
     resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, user_uuid)
 
     push socket, "user_authenticated", resp

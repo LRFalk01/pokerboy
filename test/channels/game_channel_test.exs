@@ -42,7 +42,7 @@ defmodule Pokerboy.GameChannelTest do
 
       {_, socket: user2} = join_channel(uuid, %{"name" => "lucas2"})
       
-      push user1, "user_promote", %{"user_uuid" => user2.assigns.user_id}
+      push user1, "user_promote", %{"user" => "lucas2"}
       assert_push "user_authenticated", %{status: :ok}
     end
   end

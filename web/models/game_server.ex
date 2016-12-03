@@ -23,8 +23,8 @@ defmodule Pokerboy.Gameserver do
     GenServer.call(via_tuple(game_uuid), {:become_admin, %{user: user_uuid, password: password}})
   end
 
-  def user_promote(game_uuid, admin_uuid, user_uuid) do
-    GenServer.call(via_tuple(game_uuid), {:user_promote, %{admin: admin_uuid, user_uuid: user_uuid}})
+  def user_promote(game_uuid, admin_uuid, user) do
+    GenServer.call(via_tuple(game_uuid), {:user_promote, %{admin: admin_uuid, user: user}})
   end
 
   def is_password?(game_uuid, password) do
@@ -81,24 +81,25 @@ defmodule Pokerboy.Gameserver do
     {:reply, state.password == password, state}
   end    
 
-  def handle_call({:become_admin, %{user: user_uuid, password: password}}, _from, state) do
+  def handle_call({:become_admin, %{user: user, password: password}}, _from, state) do
+    promoteUser = Map.values(state.users) |> Enum.find(fn(x) -> x.name == user end)
     cond do
       state.password != password ->
         {:reply, %{status: :error, message: "invalid password"}, state}
-      !Map.has_key?(state.users, user_uuid) ->
+      promoteUser == nil ->
         {:reply, %{status: :error, message: "invalid user"}, state}
       true ->
-        state = put_in(state.users[user_uuid].is_admin?, true)
+        state = put_in(state.users[promoteUser.id].is_admin?, true)
         {:reply, %{status: :ok, message: state.users}, state}
     end
   end    
 
-  def handle_call({:user_promote, %{admin: admin, user_uuid: user_uuid}}, _from, state) do
+  def handle_call({:user_promote, %{admin: admin, user: user}}, _from, state) do
     cond do
       !Map.has_key?(state.users, admin) || !state.users[admin].is_admin? ->
         {:reply, %{status: :error, message: "invalid admin"}, state}
       true ->
-        handle_call({:become_admin, %{user: user_uuid, password: state.password}}, {}, state)
+        handle_call({:become_admin, %{user: user, password: state.password}}, {}, state)
     end
   end    
 
