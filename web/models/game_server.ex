@@ -27,6 +27,10 @@ defmodule Pokerboy.Gameserver do
     GenServer.call(via_tuple(game_uuid), {:user_promote, %{admin: admin_uuid, user: user}})
   end
 
+  def toggle_playing(game_uuid, user_uuid, name) do
+    GenServer.call(via_tuple(game_uuid), {:toggle_playing, %{requester: user_uuid, user: name}})
+  end
+
   def is_password?(game_uuid, password) do
     GenServer.call(via_tuple(game_uuid), {:is_password, password})
   end
@@ -100,6 +104,20 @@ defmodule Pokerboy.Gameserver do
         {:reply, %{status: :error, message: "invalid admin"}, state}
       true ->
         handle_call({:become_admin, %{user: user, password: state.password}}, {}, state)
+    end
+  end    
+  
+  def handle_call({:toggle_playing, %{requester: user_uuid, user: name}}, _from, state) do
+    toggleUser = Map.values(state.users) |> Enum.find(fn(x) -> x.name == name end)
+    cond do
+      !Map.has_key?(state.users, user_uuid) || 
+      !(state.users[user_uuid].is_admin? || state.users[user_uuid].name == name) ->
+        {:reply, %{status: :error, message: "invalid requester"}, state}
+      toggleUser == nil ->
+        {:reply, %{status: :error, message: "invalid user"}, state}
+      true ->
+        state = put_in(state.users[toggleUser.id].is_player?, !toggleUser.is_player?)
+        {:reply, %{status: :ok, message: state.users}, state}
     end
   end    
 

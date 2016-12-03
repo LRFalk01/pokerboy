@@ -40,10 +40,24 @@ defmodule Pokerboy.GameChannelTest do
       push user1, "become_admin", %{"password" => password} 
       assert_push "user_authenticated", %{status: :ok}
 
-      {_, socket: user2} = join_channel(uuid, %{"name" => "lucas2"})
+      {_, socket: _} = join_channel(uuid, %{"name" => "lucas2"})
       
       push user1, "user_promote", %{"user" => "lucas2"}
       assert_push "user_authenticated", %{status: :ok}
+    end
+
+    test "it can toggle playing" do
+      assert_push "created", %{uuid: uuid, password: password}
+
+      {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
+      assert user1.joined
+      push user1, "become_admin", %{"password" => password} 
+      assert_push "user_authenticated", %{status: :ok}
+
+      {_, socket: _} = join_channel(uuid, %{"name" => "lucas2"})
+      
+      push user1, "toggle_playing", %{"user" => "lucas2"}
+      assert_push "user_toggled", %{status: :ok}
     end
   end
 

@@ -54,10 +54,10 @@ defmodule Pokerboy.GameChannel do
     {:noreply, socket}
   end
 
-  def handle_in("toggle_playing", %{"user_uuid"=>user_uuid}, socket) do
-    resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, user_uuid)
+  def handle_in("toggle_playing", %{"user"=>name}, socket) do
+    resp = Pokerboy.Gameserver.toggle_playing(socket.assigns.game_id, socket.assigns.user_id, name)
 
-    push socket, "user_authenticated", resp
+    push socket, "user_toggled", resp
     {:noreply, socket}
   end
 end
