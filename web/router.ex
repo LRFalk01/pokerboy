@@ -22,8 +22,5 @@ defmodule Pokerboy.Router do
   # Other scopes may use custom stacks.
   scope "/api", Pokerboy do
     pipe_through :api
-
-
-    get "/", GameController, :index
   end
 end
