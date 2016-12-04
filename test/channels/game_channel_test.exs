@@ -23,40 +23,33 @@ defmodule Pokerboy.GameChannelTest do
       assert ref.assigns.game_id == uuid
       assert ref.assigns.user_id != nil
     end
+  end
+  
+  describe "playing game" do
+    setup [:join_lobby, :create_game, :join_game]
 
-    test "it can become admin" do
-      assert_push "created", %{uuid: uuid, password: password}
-      {_, socket: ref} = join_channel(uuid, %{"name" => "lucas"})
-      assert ref.joined
-      push ref, "become_admin", %{"password" => password} 
+    test "it can become admin", %{socket: socket, password: password} do
+      push socket, "become_admin", %{"password" => password} 
+      assert_push "user_authenticated", %{status: :ok}
+    end    
+
+    test "it can promote user", %{socket: socket, password: password} do
+      push socket, "become_admin", %{"password" => password} 
+      assert_push "user_authenticated", %{status: :ok}
+
+      {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+      
+      push socket, "user_promote", %{"user" => "lucas2"}
       assert_push "user_authenticated", %{status: :ok}
     end
 
-    test "it can promote user" do
-      assert_push "created", %{uuid: uuid, password: password}
-
-      {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
-      assert user1.joined
-      push user1, "become_admin", %{"password" => password} 
+    test "it can toggle playing", %{socket: socket, password: password} do
+      push socket, "become_admin", %{"password" => password} 
       assert_push "user_authenticated", %{status: :ok}
 
-      {_, socket: _} = join_channel(uuid, %{"name" => "lucas2"})
+      {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
       
-      push user1, "user_promote", %{"user" => "lucas2"}
-      assert_push "user_authenticated", %{status: :ok}
-    end
-
-    test "it can toggle playing" do
-      assert_push "created", %{uuid: uuid, password: password}
-
-      {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
-      assert user1.joined
-      push user1, "become_admin", %{"password" => password} 
-      assert_push "user_authenticated", %{status: :ok}
-
-      {_, socket: _} = join_channel(uuid, %{"name" => "lucas2"})
-      
-      push user1, "toggle_playing", %{"user" => "lucas2"}
+      push socket, "toggle_playing", %{"user" => "lucas2"}
       assert_push "user_toggled", %{status: :ok}
     end
   end
@@ -72,6 +65,13 @@ defmodule Pokerboy.GameChannelTest do
 
   defp create_game(%{socket: socket}) do
     push socket, "create", %{"name" => "foo"}
-    :ok
+    {:ok, socket: socket}
+  end
+
+  defp join_game(%{socket: socket}) do
+      assert_push "created", %{uuid: uuid, password: password}
+      {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
+      assert user1.joined
+    {:ok, socket: user1, password: password}
   end
 end
