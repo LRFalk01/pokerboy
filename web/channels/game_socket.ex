@@ -69,4 +69,29 @@ defmodule Pokerboy.GameChannel do
     push socket, "user_toggled", resp
     {:noreply, socket}
   end
+
+  def handle_in("reveal", _, socket) do
+    resp = Pokerboy.Gameserver.reveal(socket.assigns.game_id, socket.assigns.user_id)
+
+    push socket, "game_reveal", resp
+    {:noreply, socket}
+  end
+
+  def handle_in("reset", _, socket) do
+    resp = Pokerboy.Gameserver.reset(socket.assigns.game_id, socket.assigns.user_id)
+
+    push socket, "game_reset", resp
+    {:noreply, socket}
+  end
+
+  def terminate(_, socket) do
+    cond do
+      !Map.has_key?(socket.assigns, :user_id) ->
+        :ok
+      true ->
+        resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id)
+        broadcast! socket, "user_leave", resp
+        :ok
+    end
+  end
 end

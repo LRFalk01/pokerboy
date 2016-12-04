@@ -19,6 +19,7 @@ defmodule Pokerboy.GameChannelTest do
     test "it can join game channel" do
       assert_push "created", %{uuid: uuid}
       {_, socket: ref} = join_channel(uuid, %{"name" => "lucas"})
+      
       assert ref.joined
       assert ref.assigns.game_id == uuid
       assert ref.assigns.user_id != nil
@@ -66,7 +67,54 @@ defmodule Pokerboy.GameChannelTest do
     test "it can reveal", %{socket: socket, password: _} do
       push socket, "user_vote", %{"vote" => "5"} 
       assert_push "user_voted", %{status: :ok, state: state}
+      
       assert state.is_showing? == true
+    end  
+
+    test "only admin can force reveal", %{socket: socket, password: _} do
+      push socket, "reveal", %{} 
+      assert_push "game_reveal", %{status: :error, message: "invalid requester"}
+    end  
+
+    test "admin can force reveal", %{socket: socket, password: password} do
+      push socket, "become_admin", %{"password" => password} 
+      assert_push "user_authenticated", %{status: :ok}
+      
+      push socket, "reveal", %{} 
+      assert_push "game_reveal", %{status: :ok, state: state}
+      
+      assert state.is_showing? == true
+    end
+
+    test "only admin can reset", %{socket: socket, password: _} do
+      push socket, "reset", %{} 
+      assert_push "game_reset", %{status: :error, message: "invalid requester"}
+    end  
+
+    test "admin can reset", %{socket: socket, password: password} do
+      push socket, "become_admin", %{"password" => password} 
+      assert_push "user_authenticated", %{status: :ok}
+      
+      push socket, "user_vote", %{"vote" => "5"} 
+      assert_push "user_voted", %{status: :ok}
+      
+      push socket, "reset", %{} 
+      assert_push "game_reset", %{status: :ok, state: state}
+      
+      assert Map.values(state.users) |> Enum.all?(fn(x) -> x.vote == nil end)
+    end
+
+    test "it leaves on disconnect", %{socket: socket, password: _} do
+      {_, socket: user2} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+      
+      Process.flag(:trap_exit, true)
+      close(user2)
+      socket_pid = user2.channel_pid
+      assert_receive {:EXIT, ^socket_pid, {:shutdown, :closed}}
+    
+      assert_broadcast "user_leave", %{status: :ok, state: state}
+
+      assert !Map.has_key?(state.users, user2.assigns.user_id)
     end  
   end
 

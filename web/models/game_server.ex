@@ -28,6 +28,18 @@ defmodule Pokerboy.Gameserver do
     GenServer.call(via_tuple(game_uuid), {:toggle_playing, %{requester: user_uuid, user: name}})
   end
 
+  def reveal(game_uuid, user_uuid) do
+    GenServer.call(via_tuple(game_uuid), {:reveal, user_uuid})
+  end
+
+  def reset(game_uuid, user_uuid) do
+    GenServer.call(via_tuple(game_uuid), {:reset, user_uuid})
+  end
+
+  def leave(game_uuid, user_uuid) do
+    GenServer.call(via_tuple(game_uuid), {:leave, user_uuid})
+  end
+
   def game_exists?(game_uuid) do
      case :gproc.where({:n, :l, {:game_uuid, game_uuid}}) do
        :undefined -> :false
@@ -99,6 +111,44 @@ defmodule Pokerboy.Gameserver do
       true ->
         state = put_in(state.users[toggleUser.id].is_player?, !toggleUser.is_player?) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}
+    end
+  end
+
+  def handle_call({:reveal, user_uuid}, _from, state) do
+    cond do
+      !Map.has_key?(state.users, user_uuid) ->
+        {:reply, %{status: :error, message: "invalid user"}, state}
+      state.users[user_uuid].is_admin? == false ->
+        {:reply, %{status: :error, message: "invalid requester"}, state}
+      true ->
+        state = put_in(state.is_showing?, true)
+        {:reply, %{status: :ok, state: state}, state}        
+    end
+  end
+
+  def handle_call({:reset, user_uuid}, _from, state) do
+    cond do
+      !Map.has_key?(state.users, user_uuid) ->
+        {:reply, %{status: :error, message: "invalid user"}, state}
+      state.users[user_uuid].is_admin? == false ->
+        {:reply, %{status: :error, message: "invalid requester"}, state}
+      true ->
+        users = Map.values(state.users)
+          |> Enum.map(fn(x) -> %{x | vote: nil} end)
+          |> Map.new(fn(x) -> {x.id, x} end)
+        state = put_in(state.users, users)
+        {:reply, %{status: :ok, state: state}, state}        
+    end
+  end
+
+  def handle_call({:leave, user_uuid}, _from, state) do
+    cond do
+      !Map.has_key?(state.users, user_uuid) ->
+        {:reply, %{status: :error, message: "invalid user"}, state}
+      true ->
+        users = Map.delete(state.users, user_uuid)
+        state = put_in(state.users, users) |> decide_reveal
+        {:reply, %{status: :ok, state: state}, state}        
     end
   end
 
