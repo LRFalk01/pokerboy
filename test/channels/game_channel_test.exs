@@ -31,75 +31,92 @@ defmodule Pokerboy.GameChannelTest do
 
     test "it can become admin", %{socket: socket, password: password} do
       push socket, "become_admin", %{"password" => password} 
-      assert_push "user_authenticated", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
     end    
 
     test "it can promote user", %{socket: socket, password: password} do
       push socket, "become_admin", %{"password" => password} 
-      assert_push "user_authenticated", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
 
       {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
       
       push socket, "user_promote", %{"user" => "lucas2"}
-      assert_push "user_authenticated", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
     end
 
     test "it can toggle playing", %{socket: socket, password: password} do
       push socket, "become_admin", %{"password" => password} 
-      assert_push "user_authenticated", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
 
       {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
       
       push socket, "toggle_playing", %{"user" => "lucas2"}
-      assert_push "user_toggled", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
     end
 
     test "it can vote", %{socket: socket, password: _} do
       push socket, "user_vote", %{"vote" => "5"} 
-      assert_push "user_voted", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
     end  
 
     test "it rejects invalid vote", %{socket: socket, password: _} do
       push socket, "user_vote", %{"vote" => ":)"} 
-      assert_push "user_voted", %{status: :error}
+      assert_broadcast "game_update", %{status: :error}
     end  
+
+    test "it does not show user votes", %{socket: socket, password: _} do
+      {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+            
+      push socket, "user_vote", %{"vote" => "5"} 
+      assert_broadcast "game_update", %{status: :ok, state: state}
+
+      assert state.users["lucas2"].vote == false
+      assert state.users["lucas"].vote == true
+    end
+
+    test "it does show user votes on reveal", %{socket: socket, password: _} do            
+      push socket, "user_vote", %{"vote" => "5"} 
+      assert_broadcast "game_update", %{status: :ok, state: state}
+
+      assert state.users["lucas"].vote == "5"
+    end
 
     test "it can reveal", %{socket: socket, password: _} do
       push socket, "user_vote", %{"vote" => "5"} 
-      assert_push "user_voted", %{status: :ok, state: state}
+      assert_broadcast "game_update", %{status: :ok, state: state}
       
       assert state.is_showing? == true
     end  
 
     test "only admin can force reveal", %{socket: socket, password: _} do
       push socket, "reveal", %{} 
-      assert_push "game_reveal", %{status: :error, message: "invalid requester"}
+      assert_broadcast "game_update", %{status: :error, message: "invalid requester"}
     end  
 
     test "admin can force reveal", %{socket: socket, password: password} do
       push socket, "become_admin", %{"password" => password} 
-      assert_push "user_authenticated", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
       
       push socket, "reveal", %{} 
-      assert_push "game_reveal", %{status: :ok, state: state}
+      assert_broadcast "game_update", %{status: :ok, state: state}
       
       assert state.is_showing? == true
     end
 
     test "only admin can reset", %{socket: socket, password: _} do
       push socket, "reset", %{} 
-      assert_push "game_reset", %{status: :error, message: "invalid requester"}
+      assert_broadcast "game_update", %{status: :error, message: "invalid requester"}
     end  
 
     test "admin can reset", %{socket: socket, password: password} do
       push socket, "become_admin", %{"password" => password} 
-      assert_push "user_authenticated", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
       
       push socket, "user_vote", %{"vote" => "5"} 
-      assert_push "user_voted", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
       
       push socket, "reset", %{} 
-      assert_push "game_reset", %{status: :ok, state: state}
+      assert_broadcast "game_update", %{status: :ok, state: state}
       
       assert Map.values(state.users) |> Enum.all?(fn(x) -> x.vote == nil end)
     end
@@ -112,7 +129,7 @@ defmodule Pokerboy.GameChannelTest do
       socket_pid = user2.channel_pid
       assert_receive {:EXIT, ^socket_pid, {:shutdown, :closed}}
     
-      assert_broadcast "user_leave", %{status: :ok, state: state}
+      assert_broadcast "game_update", %{status: :ok, state: state}
 
       assert !Map.has_key?(state.users, user2.assigns.user_id)
     end  

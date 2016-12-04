@@ -19,6 +19,13 @@
             "isBuildCommand": true,
             "suppressTaskName": true,
             "args": ["mix"]
+        },
+        {
+            "taskName": "Elixir-Test",
+            "isBuildCommand": false,
+            "isTestCommand": true,
+            "suppressTaskName": true,
+            "args": ["mix test"]
         }
     ]
 }
