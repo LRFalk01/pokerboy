@@ -13,7 +13,7 @@ defmodule Pokerboy.GameChannelTest do
     setup [:join_lobby, :create_game]
 
     test "it can create a game" do
-      assert_push "created", %{uuid: _}
+      assert_push "created", %{uuid: _, password: _}
     end  
 
     test "it can join game channel" do

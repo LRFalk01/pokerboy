@@ -1,7 +1,7 @@
 defmodule Pokerboy.Gameserver do
   use GenServer
   defstruct name: nil, users: %{}, password: nil, is_showing?: false
-  @valid_votes [nil, "0","1","2","3","5","8","13","21","34","55","89","?"]
+  @valid_votes [nil | ~w(0 1 2 3 5 8 13 21 34 55 89 ?)]
 
   #API
   def user_available?(game_uuid, username) do

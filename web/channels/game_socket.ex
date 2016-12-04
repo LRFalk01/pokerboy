@@ -43,44 +43,44 @@ defmodule Pokerboy.GameChannel do
   end
 
   def handle_in("become_admin", %{"password"=>password}, socket) do
-    resp = Pokerboy.Gameserver.become_admin(socket.assigns.game_id, socket.assigns.name, password) |> sanatize_state
+    resp = Pokerboy.Gameserver.become_admin(socket.assigns.game_id, socket.assigns.name, password)
 
-    broadcast! socket, "game_update", resp
+    update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("user_promote", %{"user"=>name}, socket) do
-    resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, name) |> sanatize_state
+    resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, name)
 
-    broadcast! socket, "game_update", resp
+    update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("user_vote", %{"vote"=>vote}, socket) do
-    resp = Pokerboy.Gameserver.user_vote(socket.assigns.game_id, socket.assigns.user_id, vote) |> sanatize_state
+    resp = Pokerboy.Gameserver.user_vote(socket.assigns.game_id, socket.assigns.user_id, vote)
 
-    broadcast! socket, "game_update", resp
+    update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("toggle_playing", %{"user"=>name}, socket) do
-    resp = Pokerboy.Gameserver.toggle_playing(socket.assigns.game_id, socket.assigns.user_id, name) |> sanatize_state
+    resp = Pokerboy.Gameserver.toggle_playing(socket.assigns.game_id, socket.assigns.user_id, name)
 
-    broadcast! socket, "game_update", resp
+    update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("reveal", _, socket) do
-    resp = Pokerboy.Gameserver.reveal(socket.assigns.game_id, socket.assigns.user_id) |> sanatize_state
+    resp = Pokerboy.Gameserver.reveal(socket.assigns.game_id, socket.assigns.user_id)
 
-    broadcast! socket, "game_update", resp
+    update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("reset", _, socket) do
-    resp = Pokerboy.Gameserver.reset(socket.assigns.game_id, socket.assigns.user_id) |> sanatize_state  
+    resp = Pokerboy.Gameserver.reset(socket.assigns.game_id, socket.assigns.user_id)  
 
-    broadcast! socket, "game_update", resp
+    update_game(socket, resp)
     {:noreply, socket}
   end
 
@@ -89,10 +89,14 @@ defmodule Pokerboy.GameChannel do
       !Map.has_key?(socket.assigns, :user_id) ->
         :ok
       true ->
-        resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id) |> sanatize_state
-        broadcast! socket, "game_update", resp
+        resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id)
+        update_game(socket, resp)
         :ok
     end
+  end
+
+  defp update_game(socket, response) do
+    broadcast! socket, "game_update", (response |> sanatize_state)
   end
 
   defp sanatize_state(%{status: :error, message: message}) do
@@ -114,7 +118,7 @@ defmodule Pokerboy.GameChannel do
           x = Map.delete(x, :id)
           cond do
             !show_vote? ->
-              %{x | vote: x.vote != nil}
+              %{x | vote: !is_nil(x.vote)}
             true ->
               x
           end
