@@ -1,16 +1,9 @@
 defmodule Pokerboy.Gameserver do
   use GenServer
-  defstruct name: nil, users: %{}, password: nil
+  defstruct name: nil, users: %{}, password: nil, is_showing?: false
+  @valid_votes [nil, "0","1","2","3","5","8","13","21","34","55","89","?"]
 
   #API
-  def get_name(game_uuid) do
-    GenServer.call(via_tuple(game_uuid), :get_name)
-  end
-
-  def users_get(game_uuid) do
-    GenServer.call(via_tuple(game_uuid), :user_get)
-  end
-
   def user_available?(game_uuid, username) do
     GenServer.call(via_tuple(game_uuid), {:user_available, username})
   end
@@ -27,16 +20,12 @@ defmodule Pokerboy.Gameserver do
     GenServer.call(via_tuple(game_uuid), {:user_promote, %{admin: admin_uuid, user: user}})
   end
 
+  def user_vote(game_uuid, user_uuid, vote) do
+    GenServer.call(via_tuple(game_uuid), {:user_vote, %{user: user_uuid, vote: vote}})
+  end
+
   def toggle_playing(game_uuid, user_uuid, name) do
     GenServer.call(via_tuple(game_uuid), {:toggle_playing, %{requester: user_uuid, user: name}})
-  end
-
-  def is_password?(game_uuid, password) do
-    GenServer.call(via_tuple(game_uuid), {:is_password, password})
-  end
-
-  def users_leave(game_uuid, user) do
-    GenServer.cast(via_tuple(game_uuid), {:user_part, user})
   end
 
   def game_exists?(game_uuid) do
@@ -67,23 +56,15 @@ defmodule Pokerboy.Gameserver do
   def handle_call({:user_join, name}, _from, state) do
     uuid = Ecto.UUID.generate()
     user = %Pokerboy.Player{id: uuid, name: name}
-    state = %{ state | users: Map.put(state.users, uuid, user)}
-    {:reply, uuid, state}
+    state = %{ state | users: Map.put(state.users, uuid, user)} |> decide_reveal
+    {:reply, %{uuid: uuid, state: state}, state}
   end
-  
-  def handle_call(:user_get, _from, state) do
-    {:reply, state.users, state}
-  end 
   
   def handle_call({:user_available, username}, _from, state) do
     available = Map.values(state.users) 
       |> Enum.all?(fn(user) -> user.name != username end)
     {:reply, available, state}
-  end    
-  
-  def handle_call({:is_password, password}, _from, state) do
-    {:reply, state.password == password, state}
-  end    
+  end  
 
   def handle_call({:become_admin, %{user: user, password: password}}, _from, state) do
     promoteUser = Map.values(state.users) |> Enum.find(fn(x) -> x.name == user end)
@@ -94,7 +75,7 @@ defmodule Pokerboy.Gameserver do
         {:reply, %{status: :error, message: "invalid user"}, state}
       true ->
         state = put_in(state.users[promoteUser.id].is_admin?, true)
-        {:reply, %{status: :ok, message: state.users}, state}
+        {:reply, %{status: :ok, state: state}, state}
     end
   end    
 
@@ -116,16 +97,35 @@ defmodule Pokerboy.Gameserver do
       toggleUser == nil ->
         {:reply, %{status: :error, message: "invalid user"}, state}
       true ->
-        state = put_in(state.users[toggleUser.id].is_player?, !toggleUser.is_player?)
-        {:reply, %{status: :ok, message: state.users}, state}
+        state = put_in(state.users[toggleUser.id].is_player?, !toggleUser.is_player?) |> decide_reveal
+        {:reply, %{status: :ok, state: state}, state}
     end
-  end    
-
-  def handle_call(:get_name, _from, state) do
-    {:reply, state.name, state}
   end
-  
-  def handle_cast({:user_part, user}, state) do
-    {:noreply, %{ state | users: List.delete(state.users, user)}}
-  end    
+
+  def handle_call({:user_vote, %{user: _, vote: vote}}, _from, state) when not(vote in @valid_votes) do 
+    {:reply, %{status: :error, message: "invalid vote"}, state}
+  end
+
+  def handle_call({:user_vote, %{user: user_uuid, vote: vote}}, _from, state) when vote in @valid_votes do
+    cond do
+      !Map.has_key?(state.users, user_uuid) ->
+        {:reply, %{status: :error, message: "invalid user"}, state}
+      true ->
+        state = put_in(state.users[user_uuid].vote, vote) |> decide_reveal
+        {:reply, %{status: :ok, state: state}, state}
+    end
+  end
+
+  defp decide_reveal(state=%Pokerboy.Gameserver{}) do
+    cond do
+      !(Map.keys(state.users) |> Enum.any?) ->
+        state
+      true ->
+        should_reveal? = Map.values(state.users)
+          |> Enum.filter(fn(x) -> x.is_player? end)
+          |> Enum.all?(fn(x) -> x.vote != nil end)
+        
+        put_in(state.is_showing?, should_reveal?)
+    end
+  end
 end

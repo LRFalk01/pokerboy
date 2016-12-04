@@ -21,11 +21,13 @@ defmodule Pokerboy.GameChannel do
         {:error, %{reason: "invalid username"}}
 
       true ->
+        #TODO: broadcast game state to all users on user join
+        %{uuid: user_uuid, state: _} = Gameserver.user_join(uuid, name)
         {:ok,
           socket
           |> assign(:game_id, uuid)
           |> assign(:name, name)
-          |> assign(:user_id, Gameserver.user_join(uuid, name))
+          |> assign(:user_id, user_uuid)
         }
     end
   end
@@ -51,6 +53,13 @@ defmodule Pokerboy.GameChannel do
     resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, name)
 
     push socket, "user_authenticated", resp
+    {:noreply, socket}
+  end
+
+  def handle_in("user_vote", %{"vote"=>vote}, socket) do
+    resp = Pokerboy.Gameserver.user_vote(socket.assigns.game_id, socket.assigns.user_id, vote)
+
+    push socket, "user_voted", resp
     {:noreply, socket}
   end
 

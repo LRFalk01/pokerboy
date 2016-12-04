@@ -52,6 +52,22 @@ defmodule Pokerboy.GameChannelTest do
       push socket, "toggle_playing", %{"user" => "lucas2"}
       assert_push "user_toggled", %{status: :ok}
     end
+
+    test "it can vote", %{socket: socket, password: _} do
+      push socket, "user_vote", %{"vote" => "5"} 
+      assert_push "user_voted", %{status: :ok}
+    end  
+
+    test "it rejects invalid vote", %{socket: socket, password: _} do
+      push socket, "user_vote", %{"vote" => ":)"} 
+      assert_push "user_voted", %{status: :error}
+    end  
+
+    test "it can reveal", %{socket: socket, password: _} do
+      push socket, "user_vote", %{"vote" => "5"} 
+      assert_push "user_voted", %{status: :ok, state: state}
+      assert state.is_showing? == true
+    end  
   end
 
   defp join_lobby(_), do: join_channel("lobby")
@@ -68,10 +84,9 @@ defmodule Pokerboy.GameChannelTest do
     {:ok, socket: socket}
   end
 
-  defp join_game(%{socket: socket}) do
-      assert_push "created", %{uuid: uuid, password: password}
-      {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
-      assert user1.joined
+  defp join_game(%{socket: _}) do
+    assert_push "created", %{uuid: uuid, password: password}
+    {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
     {:ok, socket: user1, password: password}
   end
 end
