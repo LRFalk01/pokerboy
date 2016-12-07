@@ -10,7 +10,8 @@ var PokerBoy = (function () {
   
   return {
     init: init,
-    create_game: create_game
+    create_game: create_game,
+    join_game: join_game
   };
 
   function init(){
@@ -36,6 +37,10 @@ var PokerBoy = (function () {
     .then(function(){
       return new Game(game_uuid, user_name);
     });
+  }
+
+  function join_game(game_uuid, user_name){    
+    return new Game(game_uuid, user_name);
   }
 
   function Game(game_uuid, username){
