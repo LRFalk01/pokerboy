@@ -40,6 +40,10 @@ defmodule Pokerboy.Gameserver do
     GenServer.call(via_tuple(game_uuid), {:leave, user_uuid})
   end
 
+  def get_state(game_uuid) do
+    GenServer.call(via_tuple(game_uuid), {:get_state})
+  end
+  
   def game_exists?(game_uuid) do
      case :gproc.where({:n, :l, {:game_uuid, game_uuid}}) do
        :undefined -> :false
@@ -136,7 +140,7 @@ defmodule Pokerboy.Gameserver do
         users = Map.values(state.users)
           |> Enum.map(fn(x) -> %{x | vote: nil} end)
           |> Map.new(fn(x) -> {x.id, x} end)
-        state = put_in(state.users, users)
+        state = put_in(state.users, users) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}        
     end
   end
@@ -164,6 +168,10 @@ defmodule Pokerboy.Gameserver do
         state = put_in(state.users[user_uuid].vote, vote) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}
     end
+  end
+
+  def handle_call({:get_state}, _from, state) do
+    {:reply, %{status: :ok, state: state}, state}
   end
 
   defp decide_reveal(state=%Pokerboy.Gameserver{}) do

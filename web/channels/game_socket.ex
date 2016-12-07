@@ -23,12 +23,15 @@ defmodule Pokerboy.GameChannel do
       true ->
         #TODO: broadcast game state to all users on user join
         %{uuid: user_uuid, state: _} = Gameserver.user_join(uuid, name)
-        {:ok,
-          socket
+
+        socket = socket
           |> assign(:game_id, uuid)
           |> assign(:name, name)
           |> assign(:user_id, user_uuid)
-        }
+        
+        send(self(), :after_join) 
+
+        {:ok, socket}
     end
   end
 
@@ -58,7 +61,7 @@ defmodule Pokerboy.GameChannel do
 
   def handle_in("user_vote", %{"vote"=>vote}, socket) do
     resp = Pokerboy.Gameserver.user_vote(socket.assigns.game_id, socket.assigns.user_id, vote)
-
+    
     update_game(socket, resp)
     {:noreply, socket}
   end
@@ -93,6 +96,13 @@ defmodule Pokerboy.GameChannel do
         update_game(socket, resp)
         :ok
     end
+  end
+
+  def handle_info(:after_join, socket) do
+    resp = Pokerboy.Gameserver.get_state(socket.assigns.game_id)  
+    
+    update_game(socket, resp)
+    {:noreply, socket}
   end
 
   defp update_game(socket, response) do

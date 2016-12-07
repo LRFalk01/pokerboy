@@ -66,6 +66,10 @@ defmodule Pokerboy.GameChannelTest do
 
     test "it does not show user votes", %{socket: socket, password: _} do
       {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+
+      #I think two assert_broadcast's are required because there are two sockets
+      assert_broadcast "game_update", %{status: :ok, state: _}
+      assert_broadcast "game_update", %{status: :ok, state: _}
             
       push socket, "user_vote", %{"vote" => "5"} 
       assert_broadcast "game_update", %{status: :ok, state: state}
@@ -118,7 +122,8 @@ defmodule Pokerboy.GameChannelTest do
       push socket, "reset", %{} 
       assert_broadcast "game_update", %{status: :ok, state: state}
       
-      assert Map.values(state.users) |> Enum.all?(fn(x) -> x.vote == nil end)
+      assert state.is_showing? == false
+      assert Map.values(state.users) |> Enum.all?(fn(x) -> x.vote == false end)
     end
 
     test "it leaves on disconnect", %{socket: socket, password: _} do
@@ -152,6 +157,7 @@ defmodule Pokerboy.GameChannelTest do
   defp join_game(%{socket: _}) do
     assert_push "created", %{uuid: uuid, password: password}
     {_, socket: user1} = join_channel(uuid, %{"name" => "lucas"})
+    assert_broadcast "game_update", %{status: :ok, state: _}
     {:ok, socket: user1, password: password}
   end
 end
