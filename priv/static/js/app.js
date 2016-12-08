@@ -53,6 +53,7 @@ var PokerBoy = (function () {
     this.reset = reset;
     this.vote = vote;
     this.state = game_state;
+    this.id = game_uuid;
 
     //runs on new to return promise which resovles with game object
     return new Promise(function(resolve, reject){
