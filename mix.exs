@@ -19,7 +19,7 @@ defmodule Pokerboy.Mixfile do
   def application do
     [mod: {Pokerboy, []},
      applications: [:phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger, :gettext,
-                    :phoenix_ecto, :postgrex, :gproc]]
+                    :phoenix_ecto, :gproc]]
   end
 
   # Specifies which paths to compile per environment.
@@ -33,7 +33,6 @@ defmodule Pokerboy.Mixfile do
     [{:phoenix, "~> 1.2.1"},
      {:phoenix_pubsub, "~> 1.0"},
      {:phoenix_ecto, "~> 3.0"},
-     {:postgrex, ">= 0.0.0"},
      {:phoenix_html, "~> 2.6"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:gettext, "~> 0.11"},

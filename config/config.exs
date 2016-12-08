@@ -7,7 +7,7 @@ use Mix.Config
 
 # General application configuration
 config :pokerboy,
-  ecto_repos: [Pokerboy.Repo]
+  ecto_repos: []
 
 # Configures the endpoint
 config :pokerboy, Pokerboy.Endpoint,
