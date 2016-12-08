@@ -138,7 +138,7 @@ defmodule Pokerboy.Gameserver do
         {:reply, %{status: :error, message: "invalid requester"}, state}
       true ->
         users = Map.values(state.users)
-          |> Enum.map(fn(x) -> %{x | vote: nil} end)
+          |> Enum.map(fn(x) -> %{x | vote: nil, original_vote: nil} end)
           |> Map.new(fn(x) -> {x.id, x} end)
         state = put_in(state.users, users) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}        
@@ -165,6 +165,11 @@ defmodule Pokerboy.Gameserver do
       !Map.has_key?(state.users, user_uuid) ->
         {:reply, %{status: :error, message: "invalid user"}, state}
       true ->
+        #vote after board is already showing
+        if !state.is_showing? do
+            state = put_in(state.users[user_uuid].original_vote, vote)
+        end
+
         state = put_in(state.users[user_uuid].vote, vote) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}
     end

@@ -128,7 +128,7 @@ defmodule Pokerboy.GameChannel do
           x = Map.delete(x, :id)
           cond do
             !show_vote? ->
-              %{x | vote: !is_nil(x.vote)}
+              %{x | vote: !is_nil(x.vote), original_vote: !is_nil(x.original_vote)}
             true ->
               x
           end

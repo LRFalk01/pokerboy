@@ -59,6 +59,17 @@ defmodule Pokerboy.GameChannelTest do
       assert_broadcast "game_update", %{status: :ok}
     end  
 
+    test "it can store original vote", %{socket: socket, password: _} do
+      push socket, "user_vote", %{"vote" => "5"} 
+      assert_broadcast "game_update", %{status: :ok}
+      
+      push socket, "user_vote", %{"vote" => "1"} 
+      assert_broadcast "game_update", %{status: :ok, state: state}
+
+      assert state.users["lucas"].original_vote == "5"
+      assert state.users["lucas"].vote == "1"
+    end  
+
     test "it rejects invalid vote", %{socket: socket, password: _} do
       push socket, "user_vote", %{"vote" => ":)"} 
       assert_broadcast "game_update", %{status: :error}

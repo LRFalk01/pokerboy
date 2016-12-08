@@ -1,5 +1,5 @@
 defmodule Pokerboy.Player do
-    defstruct id: nil, name: nil, vote: nil, is_player?: true, is_dirty_vote?: false, is_admin?: false
+    defstruct id: nil, name: nil, vote: nil, is_player?: true, original_vote: nil, is_admin?: false
 
     def sanitize_name(nil), do: nil
     def sanitize_name(name) do
