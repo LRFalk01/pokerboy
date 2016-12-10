@@ -4,6 +4,10 @@ defmodule Pokerboy.Gameserver do
   @valid_votes [nil | ~w(0 1 2 3 5 8 13 21 34 55 89 ?)]
 
   #API
+  def valid_votes() do
+    %{status: :ok, valid_votes: @valid_votes}
+  end
+
   def user_available?(game_uuid, username) do
     GenServer.call(via_tuple(game_uuid), {:user_available, username})
   end

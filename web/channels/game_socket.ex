@@ -87,6 +87,13 @@ defmodule Pokerboy.GameChannel do
     {:noreply, socket}
   end
 
+  def handle_in("valid_votes", _, socket) do
+    resp = Pokerboy.Gameserver.valid_votes()
+
+    push socket, "valid_votes", resp
+    {:noreply, socket}
+  end
+
   def terminate(_, socket) do
     cond do
       !Map.has_key?(socket.assigns, :user_id) ->

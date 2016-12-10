@@ -149,6 +149,12 @@ defmodule Pokerboy.GameChannelTest do
 
       assert !Map.has_key?(state.users, user2.assigns.user_id)
     end  
+
+    test "it has valid votes", %{socket: socket, password: _} do   
+      push socket, "valid_votes", %{}
+    
+      assert_push "valid_votes", %{status: :ok, valid_votes: [nil, "0", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "?"]}
+    end  
   end
 
   defp join_lobby(_), do: join_channel("lobby")
