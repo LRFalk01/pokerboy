@@ -49,6 +49,7 @@ var PokerBoy = (function () {
     this.become_admin = become_admin;
     this.user_promote = user_promote;
     this.toggle_playing = toggle_playing;
+    this.valid_votes = valid_votes;
     this.reveal = reveal;
     this.reset = reset;
     this.vote = vote;
@@ -95,6 +96,11 @@ var PokerBoy = (function () {
 
     function reveal(){
       game.push('reveal', {});
+    }
+
+    function valid_votes(){
+      game.push('valid_votes', {});
+      game.on("valid_votes", reason => console.log('valid_votes!!! ', reason.valid_votes) );
     }
 
     function reset(){

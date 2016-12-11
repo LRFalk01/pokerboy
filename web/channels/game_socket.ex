@@ -12,7 +12,7 @@ defmodule Pokerboy.GameChannel do
 
     cond do
       !Gameserver.game_exists?(uuid) ->
-        {:error, %{reason: "unauthorized"}}
+        {:error, %{reason: "game does not exist"}}
 
       !Gameserver.user_available?(uuid, name) ->
         {:error, %{reason: "username unavailable"}}
@@ -21,7 +21,6 @@ defmodule Pokerboy.GameChannel do
         {:error, %{reason: "invalid username"}}
 
       true ->
-        #TODO: broadcast game state to all users on user join
         %{uuid: user_uuid, state: _} = Gameserver.user_join(uuid, name)
 
         socket = socket
@@ -99,6 +98,7 @@ defmodule Pokerboy.GameChannel do
       !Map.has_key?(socket.assigns, :user_id) ->
         :ok
       true ->
+        #TODO: if last player is leaving game, destroy game.
         resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id)
         update_game(socket, resp)
         :ok
