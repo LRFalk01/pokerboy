@@ -107,6 +107,8 @@ defmodule Pokerboy.GameChannel do
 
   def handle_info(:after_join, socket) do
     resp = Pokerboy.Gameserver.get_state(socket.assigns.game_id)  
+
+    push socket, "current_user", %{status: :ok, name: socket.assigns.name}
     
     update_game(socket, resp)
     {:noreply, socket}
@@ -124,8 +126,8 @@ defmodule Pokerboy.GameChannel do
     %{status: :ok, 
     state: %{
       name: state.name,
-      is_showing?: state.is_showing?,
-      users: sanatize_users(state.users, state.is_showing?)
+      is_showing: state.is_showing,
+      users: sanatize_users(state.users, state.is_showing)
     }}
   end
 

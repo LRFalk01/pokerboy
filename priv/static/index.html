@@ -1,9 +1,50 @@
-<html>
-    <head>
-        <title>Poker Boy!</title>
-    </head>
-    <body>
-        <script src="js/phoenix.js"></script>
-        <script src="js/app.js"></script>
-    </body>
+﻿<!DOCTYPE html>
+
+<html ng-app="pPoker">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Poker Boy!</title>
+    
+    <!-- build:css /mini/style.css -->
+    <link href="lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="lib/font-awesome-4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+    <link href="lib/angular-busy/dl-angular-busy.css" rel="stylesheet" />
+    <link href="content/dron_theme.css" rel="stylesheet" type="text/css" />
+    <link href="content/site.css" rel="stylesheet" type="text/css" />
+    <!-- endbuild -->
+</head>
+<body>
+    <div ui-view></div>
+        
+    <!-- build:js /mini/js/lib.js -->
+    <script src="lib/angular-1.2.26/angular.min.js"></script>
+    <script src="lib/angular-ui-router-0.2.10/angular-ui-router.min.js"></script>
+    <script src="lib/angular-ui-utils-0.1.1/ui-utils.min.js"></script>
+    <script src="lib/angular-ui-bootstrap-0.10.0/ui-bootstrap-0.10.0.min.js"></script>
+    <script src="lib/angular-busy/angular-busy.js"></script>
+    <script src="lib/angular-cookie/angular-cookie.js"></script>
+    <script src="lib/moment-2.5.1/moment.min.js" type="text/javascript"></script>
+    <!-- endbuild -->
+
+    <!-- build:js /mini/js/app.js -->
+    <!--<script src="js/app.js"></script>-->
+    <script src="app/app.js"></script>
+    <script src="app/routes.js"></script>
+    <!-- core -->
+    <script src="app/core/services/DebounceService.js"></script>
+    <script src="app/core/services/PokerBoyService.js"></script>
+
+    <!--base-->
+    <script src="app/base/BaseController.js"></script>
+    
+    <!--account-->
+    <script src="app/create/CreateController.js"></script>
+    
+    <!--signalr-->
+    <script src="app/game/GameController.js"></script>
+
+    <!-- endbuild -->
+    <script src="js/phoenix.js"></script>
+</body>
 </html>

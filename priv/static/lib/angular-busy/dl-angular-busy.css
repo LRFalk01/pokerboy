@@ -1,0 +1,72 @@
+.cg-busy{
+	position:absolute;
+	top:0px;
+	left:0px;
+	right:0px;
+	bottom:0px;
+}
+
+.cg-busy-animation.ng-hide-add,
+.cg-busy-animation.ng-hide-remove {
+    -webkit-transition:all .3s ease;
+    -moz-transition:all .3s ease;
+    -o-transition:all .3s ease;
+    transition:all .3s ease;
+    display:block !important;
+}
+.cg-busy-animation.ng-hide-remove {
+    opacity:0;
+    -webkit-transform:translate(0px,-40px);
+    -moz-transform:translate(0px,-40px);
+    -ms-transform:translate(0px,-40px);
+    -o-transform:translate(0px,-40px);
+    transform:translate(0px,-40px);
+}
+.cg-busy-animation.ng-hide-remove.ng-hide-remove-active {
+    opacity:1;
+    -webkit-transform:translate(0px,0px);
+    -moz-transform:translate(0px,0px);
+    -ms-transform:translate(0px,0px);
+    -o-transform:translate(0px,0px);
+    transform:translate(0px,0px);
+}
+.cg-busy-animation.ng-hide-add {
+    opacity:1;
+    -webkit-transform:translate(0px,0px);
+    -moz-transform:translate(0px,0px);
+    -ms-transform:translate(0px,0px);
+    -o-transform:translate(0px,0px);
+    transform:translate(0px,0px);
+}
+.cg-busy-animation.ng-hide-add.ng-hide-add-active {
+    opacity:0;
+    -webkit-transform:translate(0px,-40px);
+    -moz-transform:translate(0px,-40px);
+    -ms-transform:translate(0px,-40px);
+    -o-transform:translate(0px,-40px);
+    transform:translate(0px,-40px);
+}
+
+.cg-busy-backdrop {
+    -moz-opacity: 0.4;
+    opacity: .40;
+    filter: alpha(opacity=40);
+    background: url(overlay.png) 0 0 repeat;
+    background-color: black;
+}
+
+
+.cg-busy-default-sign{
+    margin: 0 auto;
+    background: black url('loading.gif') no-repeat center center;
+    border-radius: 10px;
+    height: 30px;
+    width: 30px;
+    cursor: wait;
+}
+.cg-busy-default-text{
+    display: none;
+}
+.cg-busy-default-spinner{
+    display: none;
+}

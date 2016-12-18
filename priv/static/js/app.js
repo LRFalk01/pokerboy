@@ -7,11 +7,13 @@ var PokerBoy = (function () {
   game_uuid,
   game_password,
   game;
+  var gamesMap = {};
   
   return {
     init: init,
     create_game: create_game,
-    join_game: join_game
+    join_game: join_game,
+    games: gamesMap
   };
 
   function init(){
@@ -35,7 +37,11 @@ var PokerBoy = (function () {
       });
     })
     .then(function(){
-      return new Game(game_uuid, user_name);
+      return new Game(game_uuid, user_name, game_password);
+    })
+    .then(function(game){
+      gamesMap[game.id] = game;
+      return game;
     });
   }
 
@@ -43,7 +49,7 @@ var PokerBoy = (function () {
     return new Game(game_uuid, user_name);
   }
 
-  function Game(game_uuid, username){
+  function Game(game_uuid, username, password){
     var self = this, game_state = {};
 
     this.become_admin = become_admin;
@@ -55,6 +61,7 @@ var PokerBoy = (function () {
     this.vote = vote;
     this.state = game_state;
     this.id = game_uuid;
+    this.password = password;
 
     //runs on new to return promise which resovles with game object
     return new Promise(function(resolve, reject){
@@ -76,6 +83,12 @@ var PokerBoy = (function () {
           reject("failed to connect to game");
         }
       }, 10);
+    })
+    .then(function(game){
+      if(game.password){
+        game.become_admin(game.password);
+      }
+      return game;
     });
 
     function vote(vote){
@@ -122,5 +135,5 @@ var PokerBoy = (function () {
   }
 })();
 
-PokerBoy.init();
-PokerBoy.create_game('foo', 'lucas').then(function(game){ window.game = game; });
+// PokerBoy.init();
+// PokerBoy.create_game('foo', 'lucas').then(function(game){ window.game = game; });

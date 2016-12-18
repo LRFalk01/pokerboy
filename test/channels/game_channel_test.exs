@@ -100,7 +100,7 @@ defmodule Pokerboy.GameChannelTest do
       push socket, "user_vote", %{"vote" => "5"} 
       assert_broadcast "game_update", %{status: :ok, state: state}
       
-      assert state.is_showing? == true
+      assert state.is_showing == true
     end  
 
     test "only admin can force reveal", %{socket: socket, password: _} do
@@ -115,7 +115,7 @@ defmodule Pokerboy.GameChannelTest do
       push socket, "reveal", %{} 
       assert_broadcast "game_update", %{status: :ok, state: state}
       
-      assert state.is_showing? == true
+      assert state.is_showing == true
     end
 
     test "only admin can reset", %{socket: socket, password: _} do
@@ -133,7 +133,7 @@ defmodule Pokerboy.GameChannelTest do
       push socket, "reset", %{} 
       assert_broadcast "game_update", %{status: :ok, state: state}
       
-      assert state.is_showing? == false
+      assert state.is_showing == false
       assert Map.values(state.users) |> Enum.all?(fn(x) -> x.vote == false end)
     end
 

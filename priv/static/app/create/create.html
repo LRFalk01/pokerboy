@@ -1,0 +1,8 @@
+﻿<div ng-controller="CreateController as createController">
+    <form class="form-signin" novalidate name="loginForm" ng-submit="createController.submitForm()">
+        <h2 class="form-signin-heading">Pick a name</h2>
+        <input type="text" autofocus="" class="form-control" required name="Name" ng-model="createController.Name" placeholder="Display Name" />
+        <input type="text" autofocus="" class="form-control" required name="Game" ng-model="createController.Game" placeholder="Game Name" />
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Create Game</button>
+    </form>
+</div>
