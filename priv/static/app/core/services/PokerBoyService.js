@@ -64,6 +64,7 @@ pPoker.factory('PokerBoyService',
                     this.state = game_state;
                     this.id = game_uuid;
                     this.password = password;
+                    this.username = username;
 
                     //runs on new to return promise which resovles with game object
                     return new Promise(function(resolve, reject){

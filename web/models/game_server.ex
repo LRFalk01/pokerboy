@@ -144,6 +144,8 @@ defmodule Pokerboy.Gameserver do
         users = Map.values(state.users)
           |> Enum.map(fn(x) -> %{x | vote: nil, original_vote: nil} end)
           |> Map.new(fn(x) -> {x.id, x} end)
+          
+        state = put_in(state.is_showing, false)
         state = put_in(state.users, users) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}        
     end
@@ -186,6 +188,8 @@ defmodule Pokerboy.Gameserver do
   defp decide_reveal(state=%Pokerboy.Gameserver{}) do
     cond do
       !(Map.keys(state.users) |> Enum.any?) ->
+        state
+      state.is_showing ->
         state
       true ->
         should_reveal? = Map.values(state.users)

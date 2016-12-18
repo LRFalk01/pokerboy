@@ -20,6 +20,7 @@ pPoker.controller('GameController', ['$scope', '$log', 'PokerBoyService', '$stat
             //if game was created by this client
             if(PokerBoyService.PokerBoy.games[$stateParams.gameId]){
                 vm.game = PokerBoyService.PokerBoy.games[$stateParams.gameId];
+                vm.Name = vm.game.username;
                 process_state(vm.game.state);
 
                 vm.game.valid_votes();
@@ -52,6 +53,7 @@ pPoker.controller('GameController', ['$scope', '$log', 'PokerBoyService', '$stat
             PokerBoyService.Join($stateParams.gameId, vm.Name)
             .then(function(game){
                 vm.game = game;
+                vm.Name = vm.game.username;
                 vm.game.valid_votes();
 
                 var game_password = localStorage.getItem($stateParams.gameId);
