@@ -33,6 +33,12 @@ defmodule Pokerboy.GameChannelTest do
       push socket, "become_admin", %{"password" => password} 
       assert_broadcast "game_update", %{status: :ok}
     end    
+    
+    test "max username size of 10", %{socket: socket, password: _} do
+      {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "12345678901"})
+      assert_broadcast "game_update", %{status: :ok, state: state}
+      assert state.users["1234567890"].is_player == false
+    end    
 
     test "it can promote user", %{socket: socket, password: password} do
       push socket, "become_admin", %{"password" => password} 
@@ -54,12 +60,39 @@ defmodule Pokerboy.GameChannelTest do
       assert_broadcast "game_update", %{status: :ok}
     end
 
+    test "it can kick player", %{socket: socket, password: password} do
+      push socket, "become_admin", %{"password" => password} 
+      assert_broadcast "game_update", %{status: :ok}
+
+      {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+      assert_broadcast "game_update", %{status: :ok}
+      assert_broadcast "game_update", %{status: :ok}
+      
+      push socket, "kick_player", %{"user" => "lucas2"}
+      assert_broadcast "game_update", %{status: :ok, state: state}
+
+      assert state.users["lucas2"] == nil
+    end
+
+    test "it can only kick player if admin", %{socket: socket, password: _} do
+      {_, socket: _} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+      assert_broadcast "game_update", %{status: :ok}
+      
+      push socket, "kick_player", %{"user" => "lucas2"}
+      assert_broadcast "game_update", %{status: :ok, state: state}
+
+      assert state.users["lucas2"] != nil
+    end
+
     test "it can vote", %{socket: socket, password: _} do
       push socket, "user_vote", %{"vote" => "5"} 
       assert_broadcast "game_update", %{status: :ok}
     end  
 
     test "it can store original vote", %{socket: socket, password: _} do
+      push socket, "toggle_playing", %{"user" => "lucas"}
+      assert_broadcast "game_update", %{status: :ok}
+
       push socket, "user_vote", %{"vote" => "5"} 
       assert_broadcast "game_update", %{status: :ok}
       
@@ -89,7 +122,9 @@ defmodule Pokerboy.GameChannelTest do
       assert state.users["lucas"].vote == true
     end
 
-    test "it does show user votes on reveal", %{socket: socket, password: _} do            
+    test "it does show user votes on reveal", %{socket: socket, password: _} do   
+      push socket, "toggle_playing", %{"user" => "lucas"}
+      assert_broadcast "game_update", %{status: :ok}         
       push socket, "user_vote", %{"vote" => "5"} 
       assert_broadcast "game_update", %{status: :ok, state: state}
 
@@ -97,14 +132,27 @@ defmodule Pokerboy.GameChannelTest do
     end
 
     test "it can reveal", %{socket: socket, password: _} do
+      push socket, "toggle_playing", %{"user" => "lucas"}
+      assert_broadcast "game_update", %{status: :ok}
+
       push socket, "user_vote", %{"vote" => "5"} 
       assert_broadcast "game_update", %{status: :ok, state: state}
       
       assert state.is_showing == true
+    end 
+
+    test "it does not reveal on no players", %{socket: socket, password: _} do
+      push socket, "toggle_playing", %{"user" => "lucas"}    
+      assert_broadcast "game_update", %{status: :ok, state: state}
+      
+      assert state.is_showing == false
     end  
 
     test "only admin can force reveal", %{socket: socket, password: _} do
-      push socket, "reveal", %{} 
+      {_, socket: socket2} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+      assert_broadcast "game_update", %{status: :ok}
+
+      push socket2, "reveal", %{} 
       assert_broadcast "game_update", %{status: :error, message: "invalid requester"}
     end  
 
@@ -119,7 +167,10 @@ defmodule Pokerboy.GameChannelTest do
     end
 
     test "only admin can reset", %{socket: socket, password: _} do
-      push socket, "reset", %{} 
+      {_, socket: socket2} = join_channel(socket.assigns.game_id, %{"name" => "lucas2"})
+      assert_broadcast "game_update", %{status: :ok}
+
+      push socket2, "reset", %{} 
       assert_broadcast "game_update", %{status: :error, message: "invalid requester"}
     end  
 

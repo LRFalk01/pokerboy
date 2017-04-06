@@ -12,7 +12,9 @@ defmodule Pokerboy.GameChannel do
 
     cond do
       !Gameserver.game_exists?(uuid) ->
-        {:error, %{reason: "game does not exist"}}
+        %{ uuid: uuid, password: password } = create_game(uuid)
+        socket = join_game(socket, name, uuid)
+        {:ok, socket}
 
       !Gameserver.user_available?(uuid, name) ->
         {:error, %{reason: "username unavailable"}}
@@ -21,25 +23,14 @@ defmodule Pokerboy.GameChannel do
         {:error, %{reason: "invalid username"}}
 
       true ->
-        %{uuid: user_uuid, state: _} = Gameserver.user_join(uuid, name)
-
-        socket = socket
-          |> assign(:game_id, uuid)
-          |> assign(:name, name)
-          |> assign(:user_id, user_uuid)
-        
-        send(self(), :after_join) 
-
+        socket = join_game(socket, name, uuid)
         {:ok, socket}
     end
   end
 
-  def handle_in("create", %{"name"=>name}, socket) do
+  def handle_in("create", _, socket) do
     uuid = Ecto.UUID.generate()
-    password = Ecto.UUID.generate()
-    game_settings = %{name: name, uuid: uuid, password: password}
-    Pokerboy.Gamesupervisor.start_game(game_settings)
-
+    %{ uuid: uuid, password: password } = create_game(uuid)
     push socket, "created", %{ uuid: uuid, password: password }
     {:noreply, socket}
   end
@@ -67,6 +58,13 @@ defmodule Pokerboy.GameChannel do
 
   def handle_in("toggle_playing", %{"user"=>name}, socket) do
     resp = Pokerboy.Gameserver.toggle_playing(socket.assigns.game_id, socket.assigns.user_id, name)
+
+    update_game(socket, resp)
+    {:noreply, socket}
+  end
+
+  def handle_in("kick_player", %{"user"=>name}, socket) do
+    resp = Pokerboy.Gameserver.kick_player(socket.assigns.game_id, socket.assigns.user_id, name)
 
     update_game(socket, resp)
     {:noreply, socket}
@@ -125,7 +123,6 @@ defmodule Pokerboy.GameChannel do
   defp sanatize_state(%{status: :ok, state: state}) do
     %{status: :ok, 
     state: %{
-      name: state.name,
       is_showing: state.is_showing,
       users: sanatize_users(state.users, state.is_showing)
     }}
@@ -144,5 +141,27 @@ defmodule Pokerboy.GameChannel do
           end
         end)
       |> Map.new(fn(x) -> {x.name, x} end)
+  end
+
+  defp create_game(key) do
+    password = Ecto.UUID.generate()
+    game_settings = %{uuid: key, password: password}
+    Pokerboy.Gamesupervisor.start_game(game_settings)
+    %{uuid: key, password: password}
+  end
+
+  defp join_game(socket, name, uuid) do
+    alias Pokerboy.{Gameserver, Player}
+
+    %{uuid: user_uuid, state: _} = Gameserver.user_join(uuid, name)
+
+    socket = socket
+      |> assign(:game_id, uuid)
+      |> assign(:name, name)
+      |> assign(:user_id, user_uuid)
+    
+    send(self(), :after_join) 
+
+    socket
   end
 end
