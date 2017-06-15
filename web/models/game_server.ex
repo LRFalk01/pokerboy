@@ -1,6 +1,6 @@
 defmodule Pokerboy.Gameserver do
   use GenServer
-  defstruct users: %{}, password: nil, is_showing: false
+  defstruct users: %{}, password: nil, is_showing: false, last_action: Timex.now
   @valid_votes [nil | ~w(0 1 2 3 5 8 13 21 34 55 89 ?)]
 
   #API
@@ -61,6 +61,8 @@ defmodule Pokerboy.Gameserver do
 
   #Server
   def init(opts) do
+    :timer.send_interval(:timer.seconds(20), self(), :game_check)
+    
     {:ok, %__MODULE__{password: opts.password}}
   end
   
@@ -76,7 +78,17 @@ defmodule Pokerboy.Gameserver do
     # {:via, module_name, term}
     {:via, :gproc, {:n, :l, {:game_uuid, game_uuid}}}
   end
-      
+
+  def handle_info(:game_check, state) do
+    inactive_hours = Timex.diff(Timex.now, state.last_action, :hours)
+
+    if inactive_hours > 2 do
+      state = put_in(state.users, %{})
+    end
+
+    {:noreply, state}
+  end
+        
   def handle_call({:user_join, name}, _from, state) do
     uuid = Ecto.UUID.generate()
     user = %Pokerboy.Player{id: uuid, name: name}

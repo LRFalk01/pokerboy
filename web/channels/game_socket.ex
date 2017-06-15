@@ -112,8 +112,24 @@ defmodule Pokerboy.GameChannel do
     {:noreply, socket}
   end
 
+  intercept ["game_update"]
+  def handle_out("game_update", %{state: _}=response, socket) do
+    cond do
+      !Map.has_key?(response.state.users, socket.assigns.user_id) ->
+        {:noreply, socket}
+      true ->
+        push socket, "game_update", (response |> sanatize_state)
+        {:noreply, socket}     
+    end
+  end
+  
+  def handle_out("game_update", %{message: _}=response, socket) do
+    push socket, "game_update", (response |> sanatize_state)
+    {:noreply, socket}
+  end
+
   defp update_game(socket, response) do
-    broadcast! socket, "game_update", (response |> sanatize_state)
+    broadcast! socket, "game_update", response
   end
 
   defp sanatize_state(%{status: :error, message: message}) do
