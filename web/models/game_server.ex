@@ -224,6 +224,7 @@ defmodule Pokerboy.Gameserver do
   end
 
   defp decide_reveal(state=%Pokerboy.Gameserver{}) do
+    state = put_in(state.last_action, Timex.now)
     cond do
       !(Map.values(state.users) |> Enum.filter(fn(x) -> x.is_player end) |> Enum.any?) ->
         state
