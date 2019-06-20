@@ -1,9 +1,9 @@
 defmodule Pokerboy.Gameserver do
   use GenServer
-  defstruct users: %{}, password: nil, is_showing: false, last_action: Timex.now
+  defstruct users: %{}, password: nil, is_showing: false, last_action: Timex.now()
   @valid_votes [nil | ~w(0 1 2 3 5 8 13 21 34 55 89 ?)]
 
-  #API
+  # API
   def valid_votes() do
     %{status: :ok, valid_votes: @valid_votes}
   end
@@ -51,28 +51,28 @@ defmodule Pokerboy.Gameserver do
   def get_state(game_uuid) do
     GenServer.call(via_tuple(game_uuid), {:get_state})
   end
-  
+
   def game_exists?(game_uuid) do
-     case :gproc.where({:n, :l, {:game_uuid, game_uuid}}) do
-       :undefined -> :false
-       _ -> :true
-     end
+    case :gproc.where({:n, :l, {:game_uuid, game_uuid}}) do
+      :undefined -> false
+      _ -> true
+    end
   end
 
-  #Server
+  # Server
   def init(opts) do
     :timer.send_interval(:timer.seconds(20), self(), :game_check)
-    
+
     {:ok, %__MODULE__{password: opts.password}}
   end
-  
+
   def start_link(opts) do
     # Instead of passing an atom to the `name` option, we send 
     # a tuple. Here we extract this tuple to a private method
     # called `via_tuple` that can be reused in every function
     GenServer.start_link(__MODULE__, opts, name: via_tuple(opts.uuid))
   end
-  
+
   defp via_tuple(game_uuid) do
     # And the tuple always follow the same format:
     # {:via, module_name, term}
@@ -80,83 +80,103 @@ defmodule Pokerboy.Gameserver do
   end
 
   def handle_info(:game_check, state) do
-    inactive_hours = Timex.diff(Timex.now, state.last_action, :hours)
+    inactive_hours = Timex.diff(Timex.now(), state.last_action, :hours)
 
-    if inactive_hours > 2 do
-      state = put_in(state.users, %{})
-    end
+    state =
+      if inactive_hours > 2 do
+        put_in(state.users, %{})
+      else
+        state
+      end
 
     {:noreply, state}
   end
-        
+
   def handle_call({:user_join, name}, _from, state) do
     uuid = Ecto.UUID.generate()
     user = %Pokerboy.Player{id: uuid, name: name}
 
-    #first player to join is admin
-    if Map.keys(state.users) |> Enum.count == 0 do
-        user = put_in(user.is_admin, true)
-    end
+    # first player to join is admin
+    user =
+      if Map.keys(state.users) |> Enum.count() == 0 do
+        put_in(user.is_admin, true)
+      else
+        user
+      end
 
-    state = %{ state | users: Map.put(state.users, uuid, user)} |> decide_reveal
+    state = %{state | users: Map.put(state.users, uuid, user)} |> decide_reveal
     {:reply, %{uuid: uuid, state: state}, state}
   end
-  
+
   def handle_call({:user_available, username}, _from, state) do
-    available = Map.values(state.users) 
-      |> Enum.all?(fn(user) -> user.name != username end)
+    available =
+      Map.values(state.users)
+      |> Enum.all?(fn user -> user.name != username end)
+
     {:reply, available, state}
-  end  
+  end
 
   def handle_call({:become_admin, %{user: user, password: password}}, _from, state) do
-    promoteUser = Map.values(state.users) |> Enum.find(fn(x) -> x.name == user end)
+    promoteUser = Map.values(state.users) |> Enum.find(fn x -> x.name == user end)
+
     cond do
       state.password != password ->
         {:reply, %{status: :error, message: "invalid password"}, state}
+
       promoteUser == nil ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       true ->
         state = put_in(state.users[promoteUser.id].is_admin, true)
         {:reply, %{status: :ok, state: state}, state}
     end
-  end    
+  end
 
   def handle_call({:user_promote, %{admin: admin, user: user}}, _from, state) do
     cond do
       !Map.has_key?(state.users, admin) || !state.users[admin].is_admin ->
         {:reply, %{status: :error, message: "invalid admin"}, state}
+
       true ->
         handle_call({:become_admin, %{user: user, password: state.password}}, {}, state)
     end
-  end    
-  
+  end
+
   def handle_call({:toggle_playing, %{requester: user_uuid, user: name}}, _from, state) do
-    toggleUser = Map.values(state.users) |> Enum.find(fn(x) -> x.name == name end)
+    toggleUser = Map.values(state.users) |> Enum.find(fn x -> x.name == name end)
+
     cond do
-      !Map.has_key?(state.users, user_uuid) || 
-      !(state.users[user_uuid].is_admin || state.users[user_uuid].name == name) ->
+      !Map.has_key?(state.users, user_uuid) ||
+          !(state.users[user_uuid].is_admin || state.users[user_uuid].name == name) ->
         {:reply, %{status: :error, message: "invalid requester"}, state}
+
       toggleUser == nil ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       true ->
-        state = put_in(state.users[toggleUser.id].is_player, !toggleUser.is_player) |> decide_reveal
+        state =
+          put_in(state.users[toggleUser.id].is_player, !toggleUser.is_player) |> decide_reveal
+
         {:reply, %{status: :ok, state: state}, state}
     end
   end
-  
+
   def handle_call({:kick_player, %{requester: user_uuid, user: name}}, _from, state) do
-    toggleUser = Map.values(state.users) |> Enum.find(fn(x) -> x.name == name end)
+    toggleUser = Map.values(state.users) |> Enum.find(fn x -> x.name == name end)
+
     cond do
-      !Map.has_key?(state.users, user_uuid) || 
-      !(state.users[user_uuid].is_admin) ->
+      !Map.has_key?(state.users, user_uuid) ||
+          !state.users[user_uuid].is_admin ->
         {:reply, %{status: :error, message: "invalid requester"}, state}
+
       toggleUser == nil ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       true ->
         users = Map.delete(state.users, toggleUser.id)
 
         state = put_in(state.users, users) |> decide_reveal
-        {:reply, %{status: :ok, state: state}, state} 
+        {:reply, %{status: :ok, state: state}, state}
     end
   end
 
@@ -164,11 +184,13 @@ defmodule Pokerboy.Gameserver do
     cond do
       !Map.has_key?(state.users, user_uuid) ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       state.users[user_uuid].is_admin == false ->
         {:reply, %{status: :error, message: "invalid requester"}, state}
+
       true ->
         state = put_in(state.is_showing, true)
-        {:reply, %{status: :ok, state: state}, state}        
+        {:reply, %{status: :ok, state: state}, state}
     end
   end
 
@@ -176,16 +198,19 @@ defmodule Pokerboy.Gameserver do
     cond do
       !Map.has_key?(state.users, user_uuid) ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       state.users[user_uuid].is_admin == false ->
         {:reply, %{status: :error, message: "invalid requester"}, state}
+
       true ->
-        users = Map.values(state.users)
-          |> Enum.map(fn(x) -> %{x | vote: nil, original_vote: nil} end)
-          |> Map.new(fn(x) -> {x.id, x} end)
-          
+        users =
+          Map.values(state.users)
+          |> Enum.map(fn x -> %{x | vote: nil, original_vote: nil} end)
+          |> Map.new(fn x -> {x.id, x} end)
+
         state = put_in(state.is_showing, false)
         state = put_in(state.users, users) |> decide_reveal
-        {:reply, %{status: :ok, state: state}, state}        
+        {:reply, %{status: :ok, state: state}, state}
     end
   end
 
@@ -193,26 +218,33 @@ defmodule Pokerboy.Gameserver do
     cond do
       !Map.has_key?(state.users, user_uuid) ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       true ->
         users = Map.delete(state.users, user_uuid)
         state = put_in(state.users, users) |> decide_reveal
-        {:reply, %{status: :ok, state: state}, state}        
+        {:reply, %{status: :ok, state: state}, state}
     end
   end
 
-  def handle_call({:user_vote, %{user: _, vote: vote}}, _from, state) when not(vote in @valid_votes) do 
+  def handle_call({:user_vote, %{user: _, vote: vote}}, _from, state)
+      when not (vote in @valid_votes) do
     {:reply, %{status: :error, message: "invalid vote"}, state}
   end
 
-  def handle_call({:user_vote, %{user: user_uuid, vote: vote}}, _from, state) when vote in @valid_votes do
+  def handle_call({:user_vote, %{user: user_uuid, vote: vote}}, _from, state)
+      when vote in @valid_votes do
     cond do
       !Map.has_key?(state.users, user_uuid) ->
         {:reply, %{status: :error, message: "invalid user"}, state}
+
       true ->
-        #vote after board is already showing
-        if !state.is_showing do
-            state = put_in(state.users[user_uuid].original_vote, vote)
-        end
+        # vote after board is already showing
+        state =
+          if !state.is_showing do
+            put_in(state.users[user_uuid].original_vote, vote)
+          else
+            state
+          end
 
         state = put_in(state.users[user_uuid].vote, vote) |> decide_reveal
         {:reply, %{status: :ok, state: state}, state}
@@ -223,18 +255,22 @@ defmodule Pokerboy.Gameserver do
     {:reply, %{status: :ok, state: state}, state}
   end
 
-  defp decide_reveal(state=%Pokerboy.Gameserver{}) do
-    state = put_in(state.last_action, Timex.now)
+  defp decide_reveal(state = %Pokerboy.Gameserver{}) do
+    state = put_in(state.last_action, Timex.now())
+
     cond do
-      !(Map.values(state.users) |> Enum.filter(fn(x) -> x.is_player end) |> Enum.any?) ->
+      !(Map.values(state.users) |> Enum.filter(fn x -> x.is_player end) |> Enum.any?()) ->
         state
+
       state.is_showing ->
         state
+
       true ->
-        should_reveal? = Map.values(state.users)
-          |> Enum.filter(fn(x) -> x.is_player end)
-          |> Enum.all?(fn(x) -> x.vote != nil end)
-        
+        should_reveal? =
+          Map.values(state.users)
+          |> Enum.filter(fn x -> x.is_player end)
+          |> Enum.all?(fn x -> x.vote != nil end)
+
         put_in(state.is_showing, should_reveal?)
     end
   end

@@ -14,8 +14,9 @@ config :pokerboy, Pokerboy.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "lkcoXytve5e69nfjdzTdyO5e6aHaqpxcKn1IMfRmNQOvkHJW6W5GvxiMHjATcQvj",
   render_errors: [view: Pokerboy.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Pokerboy.PubSub,
-           adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: Pokerboy.PubSub, adapter: Phoenix.PubSub.PG2]
+
+config :phoenix, :json_library, Jason
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -24,4 +25,4 @@ config :logger, :console,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"
