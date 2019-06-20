@@ -1,7 +1,7 @@
 defmodule Pokerboy.Gameserver do
   use GenServer
   defstruct users: %{}, password: nil, is_showing: false, last_action: Timex.now()
-  @valid_votes [nil | ~w(0 1 2 3 5 8 13 21 34 55 89 ?)]
+  @valid_votes [nil | Application.get_env(:pokerboy, __MODULE__)[:valid_votes]]
 
   # API
   def valid_votes() do
