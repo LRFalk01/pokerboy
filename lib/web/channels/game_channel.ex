@@ -166,7 +166,7 @@ defmodule Pokerboy.GameChannel do
   defp create_game(key) do
     password = Ecto.UUID.generate()
     game_settings = %{uuid: key, password: password}
-    Pokerboy.Gamesupervisor.start_game(game_settings)
+    Pokerboy.GameSupervisor.start_game(game_settings)
     %{uuid: key, password: password}
   end
 

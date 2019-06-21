@@ -1,4 +1,4 @@
-defmodule Pokerboy.Gamesupervisor do
+defmodule Pokerboy.GameSupervisor do
   @moduledoc false
   use Supervisor
 
