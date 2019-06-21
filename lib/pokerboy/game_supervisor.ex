@@ -9,13 +9,13 @@ defmodule Pokerboy.Gamesupervisor do
   end
 
   def start_game(opts) do
-    # And we use `start_child/2` to start a new Pokerboy.Gameserver process
+    # And we use `start_child/2` to start a new Pokerboy.GameServer process
     Supervisor.start_child(:game_supervisor, [opts])
   end
 
   def init(_) do
     children = [
-      worker(Pokerboy.Gameserver, [])
+      worker(Pokerboy.GameServer, [])
     ]
 
     # We also changed the `strategty` to `simple_one_for_one`.

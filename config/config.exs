@@ -23,7 +23,7 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :pokerboy, Pokerboy.Gameserver, valid_votes: ~w(0 1 2 3 5 8 13 21 34 55 89 ?)
+config :pokerboy, Pokerboy.GameServer, valid_votes: ~w(0 1 2 3 5 8 13 21 34 55 89 ?)
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -10,17 +10,17 @@ defmodule Pokerboy.GameChannel do
   end
 
   def join("game:" <> uuid, %{"name" => name}, socket) do
-    alias Pokerboy.{Gameserver, Player}
+    alias Pokerboy.{GameServer, Player}
 
     name = Player.sanitize_name(name)
 
     cond do
-      !Gameserver.game_exists?(uuid) ->
+      !GameServer.game_exists?(uuid) ->
         %{uuid: uuid, password: _password} = create_game(uuid)
         socket = join_game(socket, name, uuid)
         {:ok, socket}
 
-      !Gameserver.user_available?(uuid, name) ->
+      !GameServer.user_available?(uuid, name) ->
         {:error, %{reason: "username unavailable"}}
 
       is_nil(name) || String.length(name) == 0 ->
@@ -40,21 +40,21 @@ defmodule Pokerboy.GameChannel do
   end
 
   def handle_in("become_admin", %{"password" => password}, socket) do
-    resp = Pokerboy.Gameserver.become_admin(socket.assigns.game_id, socket.assigns.name, password)
+    resp = Pokerboy.GameServer.become_admin(socket.assigns.game_id, socket.assigns.name, password)
 
     update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("user_promote", %{"user" => name}, socket) do
-    resp = Pokerboy.Gameserver.user_promote(socket.assigns.game_id, socket.assigns.user_id, name)
+    resp = Pokerboy.GameServer.user_promote(socket.assigns.game_id, socket.assigns.user_id, name)
 
     update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("user_vote", %{"vote" => vote}, socket) do
-    resp = Pokerboy.Gameserver.user_vote(socket.assigns.game_id, socket.assigns.user_id, vote)
+    resp = Pokerboy.GameServer.user_vote(socket.assigns.game_id, socket.assigns.user_id, vote)
 
     update_game(socket, resp)
     {:noreply, socket}
@@ -62,35 +62,35 @@ defmodule Pokerboy.GameChannel do
 
   def handle_in("toggle_playing", %{"user" => name}, socket) do
     resp =
-      Pokerboy.Gameserver.toggle_playing(socket.assigns.game_id, socket.assigns.user_id, name)
+      Pokerboy.GameServer.toggle_playing(socket.assigns.game_id, socket.assigns.user_id, name)
 
     update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("kick_player", %{"user" => name}, socket) do
-    resp = Pokerboy.Gameserver.kick_player(socket.assigns.game_id, socket.assigns.user_id, name)
+    resp = Pokerboy.GameServer.kick_player(socket.assigns.game_id, socket.assigns.user_id, name)
 
     update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("reveal", _, socket) do
-    resp = Pokerboy.Gameserver.reveal(socket.assigns.game_id, socket.assigns.user_id)
+    resp = Pokerboy.GameServer.reveal(socket.assigns.game_id, socket.assigns.user_id)
 
     update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("reset", _, socket) do
-    resp = Pokerboy.Gameserver.reset(socket.assigns.game_id, socket.assigns.user_id)
+    resp = Pokerboy.GameServer.reset(socket.assigns.game_id, socket.assigns.user_id)
 
     update_game(socket, resp)
     {:noreply, socket}
   end
 
   def handle_in("valid_votes", _, socket) do
-    resp = Pokerboy.Gameserver.valid_votes()
+    resp = Pokerboy.GameServer.valid_votes()
 
     push(socket, "valid_votes", resp)
     {:noreply, socket}
@@ -98,7 +98,7 @@ defmodule Pokerboy.GameChannel do
 
   def terminate(_, socket) do
     if Map.has_key?(socket.assigns, :user_id) do
-      resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id)
+      resp = Pokerboy.GameServer.leave(socket.assigns.game_id, socket.assigns.user_id)
       update_game(socket, resp)
     end
 
@@ -106,7 +106,7 @@ defmodule Pokerboy.GameChannel do
   end
 
   def handle_info(:after_join, socket) do
-    resp = Pokerboy.Gameserver.get_state(socket.assigns.game_id)
+    resp = Pokerboy.GameServer.get_state(socket.assigns.game_id)
 
     push(socket, "current_user", %{status: :ok, name: socket.assigns.name})
 
@@ -171,9 +171,9 @@ defmodule Pokerboy.GameChannel do
   end
 
   defp join_game(socket, name, uuid) do
-    alias Pokerboy.Gameserver
+    alias Pokerboy.GameServer
 
-    %{uuid: user_uuid, state: _} = Gameserver.user_join(uuid, name)
+    %{uuid: user_uuid, state: _} = GameServer.user_join(uuid, name)
 
     socket =
       socket

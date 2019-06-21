@@ -1,4 +1,4 @@
-defmodule Pokerboy.Gameserver do
+defmodule Pokerboy.GameServer do
   @moduledoc """
   The main controller and holder of state for each game
   """
@@ -253,7 +253,7 @@ defmodule Pokerboy.Gameserver do
     {:reply, %{status: :ok, state: state}, state}
   end
 
-  defp decide_reveal(%Pokerboy.Gameserver{} = state) do
+  defp decide_reveal(%Pokerboy.GameServer{} = state) do
     state = put_in(state.last_action, Timex.now())
 
     cond do
