@@ -52,7 +52,8 @@ defmodule Pokerboy.Mixfile do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_pubsub, "~> 1.1"},
       {:plug_cowboy, "~> 2.0"},
-      {:timex, "~> 3.5"}
+      {:timex, "~> 3.5"},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false}
     ]
   end
 

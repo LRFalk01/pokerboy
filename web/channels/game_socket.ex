@@ -1,4 +1,8 @@
 defmodule Pokerboy.GameChannel do
+  @moduledoc """
+  Responsible for the back-and-forth messaging of web socket information for
+  each game.
+  """
   use Pokerboy.Web, :channel
 
   def join("game:lobby", _message, socket) do
@@ -93,16 +97,12 @@ defmodule Pokerboy.GameChannel do
   end
 
   def terminate(_, socket) do
-    cond do
-      !Map.has_key?(socket.assigns, :user_id) ->
-        :ok
-
-      true ->
-        # TODO: if last player is leaving game, destroy game.
-        resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id)
-        update_game(socket, resp)
-        :ok
+    if Map.has_key?(socket.assigns, :user_id) do
+      resp = Pokerboy.Gameserver.leave(socket.assigns.game_id, socket.assigns.user_id)
+      update_game(socket, resp)
     end
+
+    :ok
   end
 
   def handle_info(:after_join, socket) do
@@ -117,14 +117,11 @@ defmodule Pokerboy.GameChannel do
   intercept(["game_update"])
 
   def handle_out("game_update", %{state: _} = response, socket) do
-    cond do
-      !Map.has_key?(response.state.users, socket.assigns.user_id) ->
-        {:noreply, socket}
-
-      true ->
-        push(socket, "game_update", response |> sanatize_state)
-        {:noreply, socket}
+    if Map.has_key?(response.state.users, socket.assigns.user_id) do
+      push(socket, "game_update", response |> sanatize_state)
     end
+
+    {:noreply, socket}
   end
 
   def handle_out("game_update", %{message: _} = response, socket) do
@@ -151,17 +148,16 @@ defmodule Pokerboy.GameChannel do
   end
 
   defp sanatize_users(users, show_vote?) do
-    Map.values(users)
+    users
+    |> Map.values()
     |> Enum.map(fn x ->
-      x = Map.from_struct(x) |> Map.delete(:id)
+      x = x |> Map.from_struct() |> Map.delete(:id)
 
-      cond do
-        !show_vote? ->
-          x = Map.delete(x, :original_vote)
-          %{x | vote: !is_nil(x.vote)}
-
-        true ->
-          x
+      if show_vote? do
+        x
+      else
+        x = Map.delete(x, :original_vote)
+        %{x | vote: !is_nil(x.vote)}
       end
     end)
     |> Map.new(fn x -> {x.name, x} end)

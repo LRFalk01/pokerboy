@@ -185,7 +185,10 @@ defmodule Pokerboy.GameChannelTest do
       assert_push("game_update", %{status: :ok, state: state})
 
       assert state.is_showing == false
-      assert Map.values(state.users) |> Enum.all?(fn x -> x.vote == false end)
+
+      assert state.users
+             |> Map.values()
+             |> Enum.all?(fn x -> x.vote == false end)
     end
 
     test "it leaves on disconnect", %{socket: socket, password: _} do
@@ -215,7 +218,8 @@ defmodule Pokerboy.GameChannelTest do
 
   defp join_channel(channel, params \\ %{}) do
     {:ok, _, socket} =
-      socket(nil, "", %{})
+      nil
+      |> socket("", %{})
       |> subscribe_and_join(Pokerboy.GameChannel, "game:" <> channel, params)
 
     {:ok, socket: socket}
