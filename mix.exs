@@ -5,12 +5,15 @@ defmodule Pokerboy.Mixfile do
     [
       app: :pokerboy,
       version: "0.0.1",
-      elixir: "~> 1.4",
+      elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      dialyzer: [
+        plt_add_apps: [:timex, :ecto, :phoenix_live_reload]
+      ],
       deps: deps()
     ]
   end
@@ -53,7 +56,8 @@ defmodule Pokerboy.Mixfile do
       {:phoenix_pubsub, "~> 1.1"},
       {:plug_cowboy, "~> 2.0"},
       {:timex, "~> 3.5"},
-      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false}
     ]
   end
 
