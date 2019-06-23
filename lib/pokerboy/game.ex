@@ -37,11 +37,17 @@ defmodule Pokerboy.Game do
     %{game | users: %{}, last_action: DateTime.utc_now()}
   end
 
-  @spec add_new_user(Game.t(), String.t()) :: {Player.id(), Game.t()}
+  @spec add_new_user(Game.t(), String.t()) :: {:ok, Player.id(), Game.t()} | {:error, String.t()}
   def add_new_user(%Game{users: users} = game, username) do
-    user = username |> Player.new() |> Map.put(:is_admin, map_size(users) == 0)
-    updated = decide_showing(put_in(game.users[user.id], user))
-    {user.id, updated}
+    case Enum.find(users, fn {_, user} -> user.name == username end) do
+      nil ->
+        user = username |> Player.new() |> Map.put(:is_admin, map_size(users) == 0)
+        updated = decide_showing(put_in(game.users[user.id], user))
+        {:ok, user.id, updated}
+
+      _ ->
+        {:error, "username unavailable"}
+    end
   end
 
   @spec username_available?(Game.t(), String.t()) :: boolean()

@@ -93,8 +93,13 @@ defmodule Pokerboy.GameServer do
   end
 
   def handle_call({:user_join, name}, _from, state) do
-    {uuid, updated} = Game.add_new_user(state, name)
-    {:reply, %{uuid: uuid, state: updated}, updated}
+    case Game.add_new_user(state, name) do
+      {:ok, uuid, updated} ->
+        {:reply, %{uuid: uuid, state: updated}, updated}
+
+      error ->
+        error
+    end
   end
 
   def handle_call({:user_available, username}, _from, state) do
