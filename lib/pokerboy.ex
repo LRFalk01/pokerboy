@@ -1,4 +1,5 @@
 defmodule Pokerboy do
+  @moduledoc false
   use Application
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
@@ -14,7 +15,7 @@ defmodule Pokerboy do
       supervisor(Pokerboy.Endpoint, []),
       # Start your own worker by calling: Pokerboy.Worker.start_link(arg1, arg2, arg3)
       # worker(Pokerboy.Worker, [arg1, arg2, arg3]),
-      supervisor(Pokerboy.Gamesupervisor, [])
+      supervisor(Pokerboy.GameSupervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

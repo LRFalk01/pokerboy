@@ -13,7 +13,6 @@ config :pokerboy, Pokerboy.Endpoint,
   check_origin: false,
   watchers: []
 
-
 # Watch static and templates for browser reloading.
 config :pokerboy, Pokerboy.Endpoint,
   live_reload: [

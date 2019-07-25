@@ -3,11 +3,7 @@ defmodule Pokerboy.UserSocket do
 
   ## Channels
   # channel "room:*", Pokerboy.RoomChannel
-  channel "game:*", Pokerboy.GameChannel
-
-  ## Transports
-  transport :websocket, Phoenix.Transports.WebSocket, check_origin: false
-  # transport :longpoll, Phoenix.Transports.LongPoll
+  channel("game:*", Pokerboy.GameChannel)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
